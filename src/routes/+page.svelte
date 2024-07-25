@@ -3,72 +3,75 @@
 
 	let cal = $state([]);
 
-	const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	let timezone = $state(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
-	function invert(state) {
-		return state === 'day' ? 'night' : 'day';
-	}
+	let locale = $state('default');
 
-	function getDuration(state) {
-		return state === 'day' ? 100 : 50;
-	}
+	class CycleState {
+		constructor(text) {
+			this.state = text;
+		}
 
-	function extractDayFromInstant(instant) {
-		const zonedDateTime = instant.toZonedDateTimeISO(timezone);
-		const zonedDate = zonedDateTime.toPlainDate();
-		return zonedDate;
+		invert() {
+			return new CycleState(this.state === 'day' ? 'night' : 'day');
+		}
+
+		// duration in minutes
+		duration() {
+			return this.state === 'day' ? 100 : 50;
+		}
+
+		toString() {
+			return this.state;
+		}
 	}
 
 	$effect(async () => {
+		locale = navigator.language;
+
 		const res = await fetch('https://api.warframestat.us/pc/cetusCycle');
 		if (!res.ok) return;
 		const data = await res.json();
 
-		let start = Temporal.Instant.from(data.activation);
-		let state = data.state;
+		let start = Temporal.Instant.from(data.activation).toZonedDateTimeISO(timezone);
+		let state = new CycleState(data.state);
 
-		const startDay = extractDayFromInstant(start);
+		const startDay = start.day;
 
 		const dayData = [];
 
-		while (extractDayFromInstant(start).equals(startDay)) {
+		while (startDay === start.day) {
 			dayData.push({ state, start });
-			const duration = Temporal.Duration.from({ minutes: getDuration(state) });
+			const duration = Temporal.Duration.from({ minutes: state.duration() });
 			start = start.add(duration);
-			state = invert(state);
+			state = state.invert();
 		}
 
-		start = Temporal.Instant.from(data.activation);
-		state = data.state;
+		start = Temporal.Instant.from(data.activation).toZonedDateTimeISO(timezone);
+		state = new CycleState(data.state);
 
-		while (extractDayFromInstant(start).equals(startDay)) {
-			state = invert(state);
-			const duration = Temporal.Duration.from({ minutes: -getDuration(state) });
+		while (startDay === start.day) {
+			state = state.invert();
+			const duration = Temporal.Duration.from({ minutes: -state.duration() });
 			start = start.add(duration);
 			dayData.unshift({ state, start });
 		}
 
 		cal = dayData.map(({ state, start }, i, array) => {
-			let time = 100;
-			if (state === 'night') {
-				time = 50;
-			}
+			let time = state.duration();
 
 			if (i === 0) {
 				const instant = array[1].start;
-				const zonedDateTime = instant.toZonedDateTimeISO(timezone);
-				const startOfDay = zonedDateTime.withPlainTime(Temporal.PlainTime.from('00:00:00'));
-				const startOfDayInstant = startOfDay.toInstant();
-				const difference = instant.since(startOfDayInstant);
+				const startOfDay = instant.withPlainTime(Temporal.PlainTime.from('00:00:00'));
+				const difference = instant.since(startOfDay);
 				time = difference.total({ unit: 'minutes' });
+				start = startOfDay;
 			}
 
 			if (i === array.length - 1) {
 				const instant = start;
-				const zonedDateTime = instant.toZonedDateTimeISO(timezone);
-				const startOfDay = zonedDateTime.withPlainTime(Temporal.PlainTime.from('00:00:00'));
-				const startOfDayInstant = startOfDay.toInstant();
-				const endOfDayInstant = startOfDayInstant.add({ hours: 24 });
+				const startOfDay = instant.withPlainTime(Temporal.PlainTime.from('00:00:00'));
+				const endOfDayInstant = startOfDay.add({ hours: 24 });
 				const difference = endOfDayInstant.since(instant);
 				time = difference.total({ unit: 'minutes' });
 			}
@@ -82,13 +85,15 @@
 {#each cal as c}
 	<div class="item {c.state}" style={c.style}>
 		<span class="state">{c.state}</span>
-		{c.start.toZonedDateTimeISO(timezone).toString().substring(11, 16)}
+		{c.start.toLocaleString(locale, { hour: 'numeric', minute: 'numeric' })}
 	</div>
 {/each}
 
 <style>
 	.item {
 		display: flex;
+		font-size: small;
+		font-family: 'Courier New', Courier, monospace;
 	}
 
 	.day {
