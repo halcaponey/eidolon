@@ -92,7 +92,7 @@
 <style>
 	.item {
 		display: flex;
-		font-size: small;
+		font-size: 0.75rem;
 		font-family: 'Courier New', Courier, monospace;
 	}
 
