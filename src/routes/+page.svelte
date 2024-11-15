@@ -1,11 +1,21 @@
 <script>
+	/**
+	 * TODO:
+	 * - green line to display current time
+	 * - try margins
+	 * - previous/next day buttons
+	 */
 	import { Temporal } from 'temporal-polyfill';
+
+	let data = $state(null);
 
 	let cal = $state([]);
 
-	let timezone = $state(Intl.DateTimeFormat().resolvedOptions().timeZone);
+	let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 	let locale = $state('default');
+
+	let wantedDate = $state(null);
 
 	class CycleState {
 		constructor(text) {
@@ -17,7 +27,7 @@
 		}
 
 		// duration in minutes
-		duration() {
+		get duration() {
 			return this.state === 'day' ? 100 : 50;
 		}
 
@@ -31,34 +41,84 @@
 
 		const res = await fetch('https://api.warframestat.us/pc/cetusCycle');
 		if (!res.ok) return;
-		const data = await res.json();
+		data = await res.json();
+
+		const activation = Temporal.Instant.from(data.activation).toZonedDateTimeISO(timezone);
+
+		wantedDate = activation.toPlainDate().toString();
+	});
+
+	$effect(async () => {
+		if (data == null) {
+			return;
+		}
 
 		let start = Temporal.Instant.from(data.activation).toZonedDateTimeISO(timezone);
-		let state = new CycleState(data.state);
+
+		const wantedDateObject = new Date(wantedDate);
+
+		const wantedTemporal = Temporal.ZonedDateTime.from({
+			timeZone: timezone,
+			year: wantedDateObject.getFullYear(),
+			month: wantedDateObject.getMonth() + 1,
+			day: wantedDateObject.getDate(),
+			hour: 0,
+			minute: 0,
+			second: 0
+		});
+
+		let isDayOk = false;
+		while (!isDayOk) {
+			const startOfDay = start.withPlainTime(Temporal.PlainTime.from('00:00:00'));
+			const diff = start.since(startOfDay).total({ unit: 'hours' });
+			/**
+			 * 24 * 60 / 150 = 9.6
+			 * ajouter x heure a la date actuelle
+			 * 150 * 9 = 1350 apres midi
+			 * 150 * 10 = 1500 avant midi
+			 */
+			const minuteInc = diff < 12 ? 1500 : 1350;
+			const minuteDec = diff > 12 ? -1500 : -1350;
+
+			const difference = wantedTemporal.since(startOfDay).total({ unit: 'hours' });
+
+			console.log(difference);
+
+			if (difference >= 24) {
+				start = start.add({ minutes: minuteInc });
+			} else if (difference <= -24) {
+				start = start.add({ minutes: minuteDec });
+			} else {
+				isDayOk = true;
+			}
+		}
 
 		const startDay = start.day;
 
 		const dayData = [];
 
-		while (startDay === start.day) {
-			dayData.push({ state, start });
-			const duration = Temporal.Duration.from({ minutes: state.duration() });
-			start = start.add(duration);
+		let instant = Temporal.ZonedDateTime.from(start);
+		let state = new CycleState(data.state);
+
+		while (startDay === instant.day) {
+			dayData.push({ state, start: instant });
+			const duration = Temporal.Duration.from({ minutes: state.duration });
+			instant = instant.add(duration);
 			state = state.invert();
 		}
 
-		start = Temporal.Instant.from(data.activation).toZonedDateTimeISO(timezone);
+		instant = Temporal.ZonedDateTime.from(start);
 		state = new CycleState(data.state);
 
-		while (startDay === start.day) {
+		while (startDay === instant.day) {
 			state = state.invert();
-			const duration = Temporal.Duration.from({ minutes: -state.duration() });
-			start = start.add(duration);
-			dayData.unshift({ state, start });
+			const duration = Temporal.Duration.from({ minutes: -state.duration });
+			instant = instant.add(duration);
+			dayData.unshift({ state, start: instant });
 		}
 
 		cal = dayData.map(({ state, start }, i, array) => {
-			let time = state.duration();
+			let time = state.duration;
 
 			if (i === 0) {
 				const instant = array[1].start;
@@ -82,6 +142,7 @@
 	});
 </script>
 
+<input type="date" bind:value={wantedDate} />
 {#each cal as c}
 	<div class="item {c.state}" style={c.style}>
 		<span class="state">{c.state}</span>
