@@ -1,7 +1,6 @@
 <script>
 	/**
 	 * TODO:
-	 * - try margins
 	 * - previous/next day buttons
 	 * - better colors
 	 */
