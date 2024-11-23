@@ -174,8 +174,10 @@
 	{/if}
 	{#each cal as c}
 		<div class="item {c.state}" style={c.style}>
-			<span class="state">{c.state}</span>
-			{c.start.toLocaleString(locale, { hour: 'numeric', minute: 'numeric' })}
+			<span class="state z5">{c.state}</span>
+			<span class="z5"
+				>{c.start.toLocaleString(locale, { hour: 'numeric', minute: 'numeric' })}</span
+			>
 		</div>
 	{/each}
 </div>
@@ -188,7 +190,7 @@
 	.now {
 		position: absolute;
 		width: 100%;
-		border-top: 1px solid green;
+		border-top: 2px solid green;
 	}
 
 	.time {
@@ -220,5 +222,9 @@
 	.state {
 		display: block;
 		width: 5rem;
+	}
+
+	.z5 {
+		z-index: 5;
 	}
 </style>
