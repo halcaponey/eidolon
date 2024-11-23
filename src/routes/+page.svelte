@@ -1,11 +1,15 @@
 <script>
 	/**
 	 * TODO:
-	 * - green line to display current time
 	 * - try margins
 	 * - previous/next day buttons
+	 * - better colors
 	 */
 	import { Temporal } from 'temporal-polyfill';
+
+	let now = $state(new Date());
+
+	let isToday = $state(true);
 
 	let data = $state(null);
 
@@ -36,6 +40,12 @@
 		}
 	}
 
+	$effect(() => {
+		setTimeout(() => {
+			now = new Date();
+		}, 1_000);
+	});
+
 	$effect(async () => {
 		locale = navigator.language;
 
@@ -48,7 +58,7 @@
 		wantedDate = activation.toPlainDate().toString();
 	});
 
-	$effect(async () => {
+	$effect(() => {
 		if (data == null) {
 			return;
 		}
@@ -67,6 +77,8 @@
 			second: 0
 		});
 
+		isToday = true;
+
 		let isDayOk = false;
 		while (!isDayOk) {
 			const startOfDay = start.withPlainTime(Temporal.PlainTime.from('00:00:00'));
@@ -82,12 +94,12 @@
 
 			const difference = wantedTemporal.since(startOfDay).total({ unit: 'hours' });
 
-			console.log(difference);
-
 			if (difference >= 24) {
 				start = start.add({ minutes: minuteInc });
+				isToday = false;
 			} else if (difference <= -24) {
 				start = start.add({ minutes: minuteDec });
+				isToday = false;
 			} else {
 				isDayOk = true;
 			}
@@ -140,17 +152,44 @@
 			return { state, start, style };
 		});
 	});
+
+	function dateToDisplayTime(date) {
+		return date.toTimeString().slice(0, 5);
+	}
+
+	function dateToHeight(date) {
+		const h = Number.parseInt(date.toTimeString().slice(0, 2), 10);
+		const m = Number.parseInt(date.toTimeString().slice(3, 5), 10);
+		const time = h * 60 + m;
+		return `${(4 * time) / 100}rem`;
+	}
 </script>
 
 <input type="date" bind:value={wantedDate} />
-{#each cal as c}
-	<div class="item {c.state}" style={c.style}>
-		<span class="state">{c.state}</span>
-		{c.start.toLocaleString(locale, { hour: 'numeric', minute: 'numeric' })}
-	</div>
-{/each}
+<div class="cal">
+	{#if isToday}
+		<div class="now" style:top={dateToHeight(now)}>{dateToDisplayTime(now)}</div>
+	{/if}
+	{#each cal as c}
+		<div class="item {c.state}" style={c.style}>
+			<span class="state">{c.state}</span>
+			{c.start.toLocaleString(locale, { hour: 'numeric', minute: 'numeric' })}
+		</div>
+	{/each}
+</div>
 
 <style>
+	.cal {
+		position: relative;
+	}
+
+	.now {
+		position: absolute;
+		width: 100%;
+		color: green;
+		border-top: 1px solid green;
+	}
+
 	.item {
 		display: flex;
 		font-size: 0.75rem;
