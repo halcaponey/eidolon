@@ -168,7 +168,9 @@
 <input type="date" bind:value={wantedDate} />
 <div class="cal">
 	{#if isToday}
-		<div class="now" style:top={dateToHeight(now)}>{dateToDisplayTime(now)}</div>
+		<div class="now" style:top={dateToHeight(now)}>
+			<div class="time">{dateToDisplayTime(now)}</div>
+		</div>
 	{/if}
 	{#each cal as c}
 		<div class="item {c.state}" style={c.style}>
@@ -186,8 +188,17 @@
 	.now {
 		position: absolute;
 		width: 100%;
-		color: green;
 		border-top: 1px solid green;
+	}
+
+	.time {
+		top: -0.7rem;
+		position: relative;
+		background: green;
+		width: 3rem;
+		left: 10rem;
+		color: white;
+		text-align: center;
 	}
 
 	.item {
