@@ -2,7 +2,6 @@
 	/**
 	 * TODO:
 	 * - previous/next day buttons
-	 * - better colors
 	 */
 	import { Temporal } from 'temporal-polyfill';
 
@@ -182,6 +181,12 @@
 </div>
 
 <style>
+	:global(body) {
+		--dark: rgb(25, 25, 24);
+		--light: #fefefe;
+		--accent: rgb(33, 172, 38);
+	}
+
 	.cal {
 		position: relative;
 	}
@@ -189,16 +194,16 @@
 	.now {
 		position: absolute;
 		width: 100%;
-		border-top: 2px solid green;
+		border-top: 2px solid var(--accent);
 	}
 
 	.time {
 		top: -0.7rem;
 		position: relative;
-		background: green;
+		background: var(--accent);
 		width: 3rem;
 		left: 10rem;
-		color: white;
+		color: var(--light);
 		text-align: center;
 	}
 
@@ -209,13 +214,13 @@
 	}
 
 	.day {
-		background-color: white;
-		color: black;
+		background-color: var(--light);
+		color: var(--dark);
 	}
 
 	.night {
-		background-color: black;
-		color: white;
+		background-color: var(--dark);
+		color: var(--light);
 	}
 
 	.state {
