@@ -1,8 +1,4 @@
 <script>
-	/**
-	 * TODO:
-	 * - previous/next day buttons
-	 */
 	import { Temporal } from 'temporal-polyfill';
 
 	let now = $state(new Date());
@@ -161,9 +157,22 @@
 		const time = h * 60 + m;
 		return `${(4 * time) / 100}rem`;
 	}
+
+	function addDays(quantity) {
+		return (e) => {
+			const currentDate = new Date(wantedDate);
+			const next = new Date(currentDate.getTime() + quantity * 24 * 60 * 60 * 1000); // [quantity] day in milliseconds
+			wantedDate = next.toISOString().substring(0, 10);
+		};
+	}
 </script>
 
-<input type="date" bind:value={wantedDate} />
+<div class="controls">
+	<button onclick={addDays(-1)}>-</button>
+	<input type="date" bind:value={wantedDate} />
+	<button onclick={addDays(1)}>+</button>
+</div>
+
 <div class="cal">
 	{#if isToday}
 		<div class="now" style:top={dateToHeight(now)}>
@@ -185,6 +194,18 @@
 		--dark: rgb(25, 25, 24);
 		--light: #fefefe;
 		--accent: rgb(33, 172, 38);
+	}
+
+	.controls {
+		display: flex;
+	}
+
+	.controls > button {
+		padding: 0.5rem 1rem;
+	}
+
+	.controls > input {
+		margin-inline: 0.5rem;
 	}
 
 	.cal {
