@@ -169,6 +169,10 @@
 
 <svelte:head>
 	<title>Eidolon Calendar</title>
+	<meta
+		name="description"
+		content="A web app to help you visualize your next eidolon hunt. Display the day/night cycle of the Plains of Eidolon from the game Warframe."
+	/>
 </svelte:head>
 
 <div class="controls">
