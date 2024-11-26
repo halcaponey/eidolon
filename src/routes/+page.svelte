@@ -167,6 +167,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Eidolon Calendar</title>
+</svelte:head>
+
 <div class="controls">
 	<button onclick={addDays(-1)}>-</button>
 	<input type="date" bind:value={wantedDate} />
