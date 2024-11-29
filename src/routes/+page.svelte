@@ -35,7 +35,7 @@
 	}
 
 	$effect(() => {
-		setTimeout(() => {
+		setInterval(() => {
 			now = new Date();
 		}, 1_000);
 	});
